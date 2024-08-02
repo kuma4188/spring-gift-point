@@ -1,10 +1,8 @@
 package gift.service;
 
-import gift.dto.Request.WishRequestDto;
-import gift.dto.Response.CategoryResponseDto;
-import gift.dto.Response.OptionResponseDto;
-import gift.dto.Response.ProductResponseDto;
-import gift.dto.Response.WishResponseDto;
+import gift.dto.Request.OptionRequest;
+import gift.dto.Response.WishlistResponse;
+import gift.dto.WishlistDTO;
 import gift.model.Option;
 import gift.model.Product;
 import gift.model.SiteUser;
@@ -13,13 +11,12 @@ import gift.repository.OptionRepository;
 import gift.repository.ProductRepository;
 import gift.repository.UserRepository;
 import gift.repository.WishlistRepository;
+import java.util.List;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class WishlistServiceImpl implements WishlistService {
@@ -38,64 +35,88 @@ public class WishlistServiceImpl implements WishlistService {
     }
 
     @Override
-    public void addToWish(String username, WishRequestDto wishRequestDto) {
+    public List<WishlistDTO> getWishlistByUser(String username) {
+        List<Wishlist> wishlistEntities = wishlistRepository.findByUserUsernameAndHiddenFalse(username);
+        return wishlistEntities.stream()
+            .map(WishlistDTO::convertToDTO)
+            .collect(Collectors.toList());
+    }
+
+    @Override
+    public WishlistResponse addToWishlist(String username, Long productId, int quantity, List<OptionRequest> options) {
         SiteUser user = userRepository.findByUsername(username)
             .orElseThrow(() -> new IllegalArgumentException("Invalid username: " + username));
-        Product product = productRepository.findById(wishRequestDto.productId())
-            .orElseThrow(() -> new IllegalArgumentException("Invalid product ID: " + wishRequestDto.productId()));
+        Product product = productRepository.findById(productId)
+            .orElseThrow(() -> new IllegalArgumentException("Invalid product ID: " + productId));
 
-        Wishlist wish = new Wishlist();
-        wish.setSiteUser(user);
-        wish.setProduct(product);
-        wish.setCount(wishRequestDto.count());
-        wish.setHidden(false);
+        Wishlist wishlist = new Wishlist();
+        wishlist.setUser(user);
+        wishlist.setProduct(product);
+        wishlist.setQuantity(quantity);
+        wishlist.setPrice(product.getPrice());
 
-        wishlistRepository.save(wish);
+        List<Option> optionEntities = getOptionEntities(options);
+        wishlist.setOptions(optionEntities);
 
-        List<Option> options = wishRequestDto.options().stream()
-            .map(optionDto -> optionRepository.findById(optionDto.id())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid option ID: " + optionDto.id())))
-            .collect(Collectors.toList());
-        wish.setOptions(options);
+        wishlistRepository.save(wishlist);
+        return new WishlistResponse(true);
+    }
 
-        wishlistRepository.save(wish);
+    private List<Option> getOptionEntities(List<OptionRequest> options) {
+        return options.stream()
+            .map(optionRequest -> {
+                Option optionEntity = optionRepository.findById(optionRequest.getId())
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid option ID: " + optionRequest.getId()));
+                optionEntity.setQuantity(optionRequest.getQuantity());
+                return optionEntity;
+            }).collect(Collectors.toList());
     }
 
     @Override
-    public void removeFromWish(Long wishId) {
-        wishlistRepository.deleteById(wishId);
+    public WishlistResponse removeFromWishlist(Long id) {
+        wishlistRepository.deleteById(id);
+        return new WishlistResponse(true);
     }
 
     @Override
-    public Page<WishResponseDto> getWishesByUser(String username, Pageable pageable) {
-        Page<Wishlist> wishEntities = wishlistRepository.findBySiteUserUsernameAndHiddenFalseOrderByCreatedDateDesc(username, pageable);
-        return wishEntities.map(this::convertToResponseDto);
+    public WishlistResponse updateQuantity(Long id, int quantity, Long optionId) {
+        Wishlist wishlist = wishlistRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Invalid wishlist ID: " + id));
+
+        if (optionId != null) {
+            List<Option> options = wishlist.getOptions();
+            options.stream()
+                .filter(option -> option.getId().equals(optionId))
+                .forEach(option -> option.setQuantity(quantity));
+        } else {
+            wishlist.setQuantity(quantity);
+        }
+
+        wishlistRepository.save(wishlist);
+        return new WishlistResponse(true);
     }
 
-    private WishResponseDto convertToResponseDto(Wishlist wish) {
-        ProductResponseDto productResponseDto = new ProductResponseDto(
-            wish.getProduct().getId(),
-            wish.getProduct().getName(),
-            wish.getProduct().getPrice(),
-            wish.getProduct().getImageUrl(),
-            new CategoryResponseDto(
-                wish.getProduct().getCategory().getId(),
-                wish.getProduct().getCategory().getName(),
-                wish.getProduct().getCategory().getColor(),
-                wish.getProduct().getCategory().getImageUrl(),
-                wish.getProduct().getCategory().getDescription()
-            )
-        );
+    @Override
+    public Page<WishlistDTO> getWishlistByUser1(String username, Pageable pageable) {
+        Page<Wishlist> wishlistEntities = wishlistRepository.findByUserUsernameAndHiddenFalse(username, pageable);
+        return wishlistEntities.map(WishlistDTO::convertToDTO);
+    }
 
-        List<OptionResponseDto> options = wish.getOptions().stream()
-            .map(option -> new OptionResponseDto(option.getId(), option.getName(), option.getQuantity()))
-            .collect(Collectors.toList());
+    @Override
+    public WishlistDTO getWishlistById(Long id) {
+        Wishlist wishlist = wishlistRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Invalid wishlist ID: " + id));
+        return WishlistDTO.convertToDTO(wishlist);
+    }
 
-        return new WishResponseDto(
-            wish.getId(),
-            productResponseDto,
-            wish.getCount(),
-            options
-        );
+    @Override
+    public void orderWishlist(Long id) {
+        Wishlist wishlist = wishlistRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Invalid wishlist ID: " + id));
+
+        for (Option option : wishlist.getOptions()) {
+            option.setMaxQuantity(option.getMaxQuantity() - option.getQuantity());
+            optionRepository.save(option);
+        }
+
+        wishlist.setHidden(true);
+        wishlistRepository.save(wishlist);
     }
 }

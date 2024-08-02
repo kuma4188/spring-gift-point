@@ -1,8 +1,8 @@
 function updateOptionQuantity(selectElement) {
-    const wishId = selectElement.getAttribute('data-wish-id');
+    const wishlistId = selectElement.getAttribute('data-wishlist-id');
     const quantity = selectElement.value;
 
-    fetch(`/api/wishes/update/${wishId}`, {
+    fetch(`/web/wishlist/update/${wishlistId}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded'
@@ -20,10 +20,10 @@ function refreshPage() {
     window.location.reload();
 }
 
-function deleteWishItem(button) {
-    const wishId = button.getAttribute('data-wish-id');
-    fetch(`/api/wishes/${wishId}`, {
-        method: 'DELETE',
+function deleteWishlistItem(button) {
+    const wishlistId = button.getAttribute('data-wishlist-id');
+    fetch(`/web/wishlist/delete/${wishlistId}`, {
+        method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded'
         }
@@ -31,15 +31,15 @@ function deleteWishItem(button) {
     .then(response => response.text())
     .then(data => {
         alert(data);
-        document.querySelector(`tr[data-wish-id="${wishId}"]`).style.display = 'none';
+        window.location.reload();
     })
     .catch(error => console.error('Error:', error));
 }
 
-function orderWishItem(button) {
-    const wishId = button.getAttribute('data-wish-id');
+function orderWishlistItem(button) {
+    const wishlistId = button.getAttribute('data-wishlist-id');
 
-    fetch(`/api/orders/order/${wishId}`, {
+    fetch(`/api/orders/order/${wishlistId}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded'
@@ -54,7 +54,7 @@ function orderWishItem(button) {
     })
     .then(data => {
         alert('Order placed successfully');
-        document.querySelector(`tr[data-wish-id="${wishId}"]`).style.display = 'none';
+        window.location.reload();
     })
     .catch(error => {
         console.error('Error:', error);
@@ -63,9 +63,9 @@ function orderWishItem(button) {
 }
 
 document.addEventListener("DOMContentLoaded", function() {
-    document.querySelectorAll('.delete-wish').forEach(function(button) {
+    document.querySelectorAll('.delete-wishlist').forEach(function(button) {
         button.addEventListener('click', function() {
-            deleteWishItem(this);
+            deleteWishlistItem(this);
         });
     });
     document.querySelectorAll('.update-quantity').forEach(function(button) {
@@ -78,9 +78,9 @@ document.addEventListener("DOMContentLoaded", function() {
             updateOptionQuantity(this);
         });
     });
-    document.querySelectorAll('.order-wish').forEach(function(button) {
+    document.querySelectorAll('.order-wishlist').forEach(function(button) {
         button.addEventListener('click', function() {
-            orderWishItem(this);
+            orderWishlistItem(this);
         });
     });
 });

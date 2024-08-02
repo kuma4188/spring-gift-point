@@ -1,9 +1,6 @@
 package gift.test;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
-import gift.model.Category;
-import gift.repository.CategoryRepository; // 추가
 import jakarta.validation.ConstraintViolation;
 import java.util.Optional;
 import java.util.Set;
@@ -24,23 +21,13 @@ public class ProductRepositoryTest {
 
     @Autowired
     private ProductRepository productRepository;
-    @Autowired
-    private CategoryRepository categoryRepository;
     private Validator validator;
-
-    @BeforeEach
-    public void setUp() {
-        ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
-        validator = factory.getValidator();
-    }
 
     @Test
     @DisplayName("상품 추가할때 성공적으로 작동되는 경우")
     void addProductPrice() {
         // Given
-        Category category1 = new Category(null, "교환권", "#6c95d1", "test.png", "");
-        categoryRepository.save(category1); // Category 엔티티 저장
-        Product product = new Product(null, "Test Product", 1000, "test.jpg", category1);
+        Product product = new Product(1234L,"Test Product", 1000, "test.jpg" , 1);
 
         // When
         Product savedProduct = productRepository.save(product);
@@ -54,33 +41,32 @@ public class ProductRepositoryTest {
         assertThat(updatedProduct.getImageUrl()).isEqualTo("test.jpg");
     }
 
+
     @Test
     @DisplayName("상품 수정할때 성공적으로 작동되는 경우")
     void updateProductPrice() {
         // Given
-        Category category1 = new Category(null, "교환권", "#6c95d1", "test.png", "");
-        categoryRepository.save(category1); // Category 엔티티 저장
-        Product product = new Product(null, "Test Product", 1000, "test.jpg", category1);
+        Product product = new Product(1234L,"Test Product", 1000, "test.jpg" ,1);
         Product savedProduct = productRepository.save(product);
         Long productId = savedProduct.getId();
 
         // When
         savedProduct.setPrice(1500);
+        savedProduct.setId(4321L);
         productRepository.save(savedProduct);
 
         // Then
         Product updatedProduct = productRepository.findById(productId).orElseThrow();
         assertThat(updatedProduct.getPrice()).isEqualTo(1500);
-        assertThat(updatedProduct.getId()).isEqualTo(productId);
+        assertThat(updatedProduct.getId()).isEqualTo(4321L);
     }
+
 
     @Test
     @DisplayName("상품 삭제할때 성공적으로 작동되는 경우")
     void deleteProductPrice() {
         // Given
-        Category category1 = new Category(null, "교환권", "#6c95d1", "test.png", "");
-        categoryRepository.save(category1); // Category 엔티티 저장
-        Product product = new Product(null, "Test Product", 1000, "test.jpg", category1);
+        Product product = new Product(1234L,"Test Product", 1000, "test.jpg" ,1);
         Product savedProduct = productRepository.save(product);
 
         // When
@@ -91,17 +77,23 @@ public class ProductRepositoryTest {
         Assertions.assertFalse(deletedProduct.isPresent());
     }
 
+    @BeforeEach
+    public void setUp() {
+        ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+        validator = factory.getValidator();
+    }
+
+
     @Test
     @DisplayName("상품 이름이 NULL 일때 예외발생")
     public void whenNameNull(){
         // given
-        Category category1 = new Category(null, "교환권", "#6c95d1", "test.png", "");
-        categoryRepository.save(category1); // Category 엔티티 저장
-        Product product = new Product(null, null, 1000, "test.jpg", category1);
-
+        Product product = new Product();
+        product.setName(null);
+        product.setPrice(1000);
+        product.setImageUrl("test.jpg");
         // when
         Set<ConstraintViolation<Product>> violations = validator.validate(product);
-
         // then
         assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("name") && v.getMessage().contains("이름에 NULL 불가능"));
     }
@@ -110,9 +102,10 @@ public class ProductRepositoryTest {
     @DisplayName("상품 이름이 20자 이상일때 예외발생")
     public void whenNameExceedsLength() {
         // given
-        Category category1 = new Category(null, "교환권", "#6c95d1", "test.png", "");
-        categoryRepository.save(category1); // Category 엔티티 저장
-        Product product = new Product(null, "veryveryveryveryveryveryLong", 1000, "test.jpg", category1);
+        Product product = new Product();
+        product.setName("veryveryveryveryveryveryLong");
+        product.setPrice(100);
+        product.setImageUrl("test.jpg");
 
         // when
         Set<ConstraintViolation<Product>> violations = validator.validate(product);
@@ -125,9 +118,10 @@ public class ProductRepositoryTest {
     @DisplayName("상품 가격이 NULL일때 예외발생")
     public void whenPriceNull() {
         // given
-        Category category1 = new Category(null, "교환권", "#6c95d1", "test.png", "");
-        categoryRepository.save(category1); // Category 엔티티 저장
-        Product product = new Product(null, "ValidName", 0, "test.jpg", category1);
+        Product product = new Product();
+        product.setName("ValidName");
+        product.setPrice(0); // Setting price to a valid value as price is primitive int
+        product.setImageUrl("test.jpg");
 
         // when
         Set<ConstraintViolation<Product>> violations = validator.validate(product);
@@ -140,9 +134,10 @@ public class ProductRepositoryTest {
     @DisplayName("상품 이미지가 NULL일때 예외발생")
     public void whenImageUrlNull() {
         // given
-        Category category1 = new Category(null, "교환권", "#6c95d1", "test.png", "");
-        categoryRepository.save(category1); // Category 엔티티 저장
-        Product product = new Product(null, "ValidName", 1000, null, category1);
+        Product product = new Product();
+        product.setName("ValidName");
+        product.setPrice(100);
+        product.setImageUrl(null);
 
         // when
         Set<ConstraintViolation<Product>> violations = validator.validate(product);

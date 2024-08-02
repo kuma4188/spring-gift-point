@@ -1,19 +1,11 @@
-# spring-gift-point
+# spring-gift-order
 
-<step2 과제>
+<step3 과제>
 
-1. 생성된 파일
-- WebConfig - cors 설정
-- AcceptanceTest - cors 테스트
-
-2. 수정된 파일
-- 기존의 테스트 코드중 일부는 코드가 너무 많이 변경되어서
-제거 했고 , 수정할수 있는 코드는 최대한 수정해보았습니다.
-
-3.  배포하기
-- https://www.youtube.com/watch?v=fBzR6DqP5jk <br>
-배포가 처음이라 감이 아예 잡히지 않았는데 , 위의 링크에 나온것을 가지고
-시도해봤더니 배포하기에 성공했습니다.
-- http://3.38.99.249:8080/api/products/list
-배포하고 저 주소로 접속이 가능했습니다.
-
+1. 구현 내용
+- Swagger 을 사용해서 API 문서를 작성했습니다.
+- 먼저 config 파일을 만들고 springdoc 의존성을 추가 한다음
+프로그램을 돌려서 http://localhost:8080/swagger-ui/index.htm
+여기에 접속했더니 , 자동으로 HTTP통신 목록이 나열되어있었습니다.
+- 가독성을 높이기 위해서 controller에는 @operation을 추가하고
+DTO에는 @schema를 추가했습니다.

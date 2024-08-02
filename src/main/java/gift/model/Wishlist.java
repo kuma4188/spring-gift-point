@@ -1,34 +1,32 @@
 package gift.model;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
 import java.util.List;
-import org.springframework.data.annotation.CreatedDate;
 
 @Entity
+@Table(name = "wishlist")
 public class Wishlist {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "PRODUCT_ID", nullable = false)
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private SiteUser user;
+
+    @ManyToOne
+    @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "MEMBER_ID", nullable = false)
-    private SiteUser siteUser;
+    @Column(nullable = false)
+    private int quantity;
 
     @Column(nullable = false)
-    private int count;
+    private int price;
 
     @Column(nullable = false)
-    private boolean hidden;
-
-    @CreatedDate
-    @Column(updatable = false)
-    private LocalDateTime createdDate;
+    private boolean hidden = false;
 
     @ManyToMany
     @JoinTable(
@@ -38,29 +36,38 @@ public class Wishlist {
     )
     private List<Option> options;
 
-    // Getters and Setters
+
+    public Wishlist() {}
+
+    public Wishlist(SiteUser user, Product product, int quantity, int price) {
+        this.user = user;
+        this.product = product;
+        this.quantity = quantity;
+        this.price = price;
+    }
+
     public Long getId() {
         return id;
+    }
+
+    public SiteUser getUser() {
+        return user;
     }
 
     public Product getProduct() {
         return product;
     }
 
-    public SiteUser getSiteUser() {
-        return siteUser;
+    public int getQuantity() {
+        return quantity;
     }
 
-    public int getCount() {
-        return count;
+    public int getPrice() {
+        return price;
     }
 
     public boolean isHidden() {
         return hidden;
-    }
-
-    public LocalDateTime getCreatedDate() {
-        return createdDate;
     }
 
     public List<Option> getOptions() {
@@ -71,16 +78,20 @@ public class Wishlist {
         this.id = id;
     }
 
+    public void setUser(SiteUser user) {
+        this.user = user;
+    }
+
     public void setProduct(Product product) {
         this.product = product;
     }
 
-    public void setSiteUser(SiteUser siteUser) {
-        this.siteUser = siteUser;
+    public void setQuantity(int quantity) {
+        this.quantity = quantity;
     }
 
-    public void setCount(int count) {
-        this.count = count;
+    public void setPrice(int price) {
+        this.price = price;
     }
 
     public void setHidden(boolean hidden) {
@@ -89,9 +100,5 @@ public class Wishlist {
 
     public void setOptions(List<Option> options) {
         this.options = options;
-    }
-
-    public void setCreatedDate(LocalDateTime createdDate) {
-        this.createdDate = createdDate;
     }
 }

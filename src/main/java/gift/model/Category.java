@@ -1,29 +1,24 @@
 package gift.model;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 
 @Entity
 public class Category {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(nullable = false)
+    private int id;
     private String name;
-
-    @Column(nullable = false)
     private String color;
-
-    @Column(nullable = false)
     private String imageUrl;
-
     private String description;
 
-    public Category() {
-    }
+    public Category() {}
 
-    public Category(Long id, String name, String color, String imageUrl, String description) {
+    public Category(int id, String name, String color, String imageUrl, String description) {
         this.id = id;
         this.name = name;
         this.color = color;
@@ -31,7 +26,10 @@ public class Category {
         this.description = description;
     }
 
-    public Long getId() {
+    // Getters and setters
+
+
+    public int getId() {
         return id;
     }
 
@@ -51,7 +49,7 @@ public class Category {
         return description;
     }
 
-    public void setId(Long id) {
+    public void setId(int id) {
         this.id = id;
     }
 
